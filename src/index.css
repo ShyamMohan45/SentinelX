@@ -1,10 +1,14 @@
+/* ✅ ALL imports first */
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import 'leaflet/dist/leaflet.css';
 
+/* ✅ Then Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import 'leaflet/dist/leaflet.css';
+/* everything else remains SAME */
+
 
 @layer base {
   :root {
