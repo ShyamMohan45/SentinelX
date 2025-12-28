@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
+import adminRoutes from "./routes/admin.js";
+
 
 const app = express();
 
@@ -19,6 +21,8 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api", authRoutes);
+app.use("/api/admin", adminRoutes);
+
 
 app.listen(5000, () => {
   console.log("Backend running on http://localhost:5000");
