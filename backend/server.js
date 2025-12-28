@@ -1,8 +1,15 @@
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import adminRoutes from "./routes/admin.js";
 // import db from "./db.js";
+
+dotenv.config();
+
+console.log("JWT_SECRET loaded:", process.env.JWT_SECRET ? "Yes" : "No");
+console.log("JWT_SECRET type:", typeof process.env.JWT_SECRET);
+console.log("JWT_SECRET length:", process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0);
 
 
 const app = express();

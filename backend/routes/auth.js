@@ -93,53 +93,73 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import db from "../db.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const usersFile = path.join(__dirname, "../users.json");
 
 const router = express.Router();
 
 /* =========================
-   USER LOGIN (UNCHANGED)
+   USER LOGIN (MODIFIED FOR JSON)
 ========================= */
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
+
+  console.log("Login request received for:", email);
 
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password required" });
   }
 
-  if (!db || db.state !== 'connected') {
-    return res.status(500).json({ message: "Database not connected" });
-  }
+  try {
+    const users = JSON.parse(fs.readFileSync(usersFile, "utf8"));
+    console.log("Users loaded:", users.length);
+    const user = users.find(u => u.email === email);
 
-  db.query(
-    "SELECT * FROM users WHERE email = ?",
-    [email],
-    async (err, result) => {
-      if (err) return res.status(500).json({ message: "DB error" });
-      if (!result || result.length === 0) {
-        return res.status(401).json({ message: "User not found" });
-      }
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
 
-      const user = result[0];
-      const isMatch = await bcrypt.compare(password, user.password);
+    console.log("User found:", user);
+    let isMatch;
+    try {
+      isMatch = await bcrypt.compare(password, user.password);
+    } catch (e) {
+      console.error("Bcrypt compare error:", e);
+      throw e;
+    }
+    console.log("Password match:", isMatch);
 
-      if (!isMatch) {
-        return res.status(401).json({ message: "Invalid password" });
-      }
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
 
-      const token = jwt.sign(
+    console.log("Signing token for user:", user.id);
+    let token;
+    try {
+      token = jwt.sign(
         { id: user.id, role: "user" },
         process.env.JWT_SECRET,
         { expiresIn: "1d" }
       );
-
-      res.json({ token, user: { id: user.id, email: user.email } });
+    } catch (e) {
+      console.error("JWT sign error:", e);
+      throw e;
     }
-  );
+
+    res.json({ token, user: { id: user.id, email: user.email } });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 /* =========================
-   USER SIGNUP (UNCHANGED)
+   USER SIGNUP (MODIFIED FOR JSON)
 ========================= */
 router.post("/signup", async (req, res) => {
   const { username, email, mobile, password } = req.body;
@@ -148,31 +168,31 @@ router.post("/signup", async (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  if (!db || db.state !== 'connected') {
-    return res.status(500).json({ message: "Database not connected" });
-  }
+  try {
+    const users = JSON.parse(fs.readFileSync(usersFile, "utf8"));
+    const existingUser = users.find(u => u.email === email);
 
-  db.query(
-    "SELECT * FROM users WHERE email = ?",
-    [email],
-    async (err, result) => {
-      if (err) return res.status(500).json({ message: "DB error" });
-      if (result.length > 0) {
-        return res.status(409).json({ message: "User already exists" });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      db.query(
-        "INSERT INTO users (username, email, mobile, password) VALUES (?, ?, ?, ?)",
-        [username, email, mobile, hashedPassword],
-        (err) => {
-          if (err) return res.status(500).json({ message: "DB insert error" });
-          res.status(201).json({ message: "User created" });
-        }
-      );
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
     }
-  );
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = {
+      id: Date.now().toString(),
+      username,
+      email,
+      mobile,
+      password: hashedPassword
+    };
+
+    users.push(newUser);
+    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+
+    res.status(201).json({ message: "User created" });
+  } catch (err) {
+    console.error("Signup error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 /* =========================
