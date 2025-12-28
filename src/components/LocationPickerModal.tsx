@@ -2,21 +2,8 @@
 
 import '@/lib/leafletIcon'; // 👈 VERY IMPORTANT
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import { useState,useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-
-function FixMapResize() {
-  const map = useMap();
-
-  useEffect(() => {
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 200);
-  }, [map]);
-
-  return null;
-}
-
 
 const defaultPosition: [number, number] = [28.6139, 77.2090]; // India
 
@@ -64,7 +51,6 @@ export default function LocationPickerModal({
           zoom={15}
           style={{ height: '400px', width: '100%' }}
         >
-          <FixMapResize />
           <TileLayer
             attribution="© OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -72,8 +58,6 @@ export default function LocationPickerModal({
           <ClickHandler setPosition={setPosition} />
           <Marker position={position} />
         </MapContainer>
-
-
 
         <div className="flex justify-end gap-3 mt-4">
           <Button variant="outline" onClick={onClose}>
