@@ -1,4 +1,15 @@
 import { useState } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import { motion } from 'framer-motion';
 import { 
   Shield, Users, Activity, Clock, 
@@ -16,6 +27,7 @@ const statusOptions: { value: IncidentStatus; label: string; color: string }[] =
   { value: 'responding', label: 'Responding', color: 'bg-yellow-500' },
   { value: 'resolved', label: 'Resolved', color: 'bg-green-500' },
 ];
+
 
 function AdminIncidentRow({ incident }: { incident: Incident }) {
   const { updateIncidentStatus, addNote } = useIncidentStore();
@@ -172,6 +184,37 @@ function AdminIncidentRow({ incident }: { incident: Incident }) {
 
 export default function AdminPage() {
   const incidents = useIncidentStore((state) => state.incidents);
+  
+const incidentsByStatusData = [
+  { name: 'Unverified', value: incidents.filter(i => i.status === 'unverified').length, color: '#ef4444' },
+  { name: 'Responding', value: incidents.filter(i => i.status === 'responding').length, color: '#f59e0b' },
+  { name: 'Resolved', value: incidents.filter(i => i.status === 'resolved').length, color: '#22c55e' },
+];
+
+
+const incidentsByTypeData = [
+  'Fire',
+  'Medical',
+  'Accident',
+  'Disaster',
+  'Infrastructure',
+].map((type) => ({
+  type,
+  count: incidents.filter(
+    (incident) => incident.type.toLowerCase() === type.toLowerCase()
+  ).length,
+}));
+
+
+{/* Incidents by Status */}
+<div className="mt-8 rounded-xl border border-border bg-background p-6">
+  <h2 className="text-lg font-semibold">Incidents by Status</h2>
+  <p className="mb-4 text-sm text-muted-foreground">
+    Current distribution of incident resolution states
+  </p>
+
+</div>
+
   const [sortBy, setSortBy] = useState<'priority' | 'time' | 'votes'>('priority');
 
   // Sort incidents
@@ -257,6 +300,25 @@ export default function AdminPage() {
             </div>
           </motion.div>
 
+
+{/* Admin Analytics */}
+<div className="mt-8 rounded-xl border border-border bg-background p-6">
+  <h2 className="text-lg font-semibold">Incidents by Type</h2>
+<p className="mb-4 text-sm text-muted-foreground">
+  Distribution of reported incidents across categories
+</p>
+
+  <div className="h-64 w-full">
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={incidentsByTypeData}>
+        <XAxis dataKey="type" />
+        <YAxis />
+        <Tooltip />
+        <Bar dataKey="count" fill="#38bdf8" radius={[6, 6, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+</div>
           {/* Sort Controls */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
